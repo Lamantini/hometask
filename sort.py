@@ -48,8 +48,10 @@ def sort_by_fold (fold):
 
 
     if os.path.isdir(fold):
+        if len(os.listdir(fold)) == 0:
+            shutil.rmtree(fold)
         files = os.listdir(fold)
-        
+    
         for file in files:
             try:
                 file = normalize_file (file)
