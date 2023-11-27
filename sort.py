@@ -1,6 +1,7 @@
 import os
 import re 
 import shutil
+import sys
 
 CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґ"
 TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
@@ -31,8 +32,11 @@ def normalize_file (file):
         TRANS[ord(c)] = l
         TRANS[ord(c.upper())] = l.upper()
         file_trans = file.translate(TRANS)
-        file_trans = re.sub(r'\W, ^/.', '_', file_trans)
+        
         file = file_trans
+
+        file = re.sub(r'[^a-zA-Z0-9.]', '_', file)
+    
         
         
 
@@ -56,6 +60,7 @@ def sort_by_fold (fold):
         if len(os.listdir(fold)) == 0:
             print('Empty folder. Deleting...')
             shutil.rmtree(fold)
+            return group
             
             
         else:
@@ -63,7 +68,7 @@ def sort_by_fold (fold):
         
         
         for file in files:
-            if file == '.DS_Store':
+            if file == '.DS_Store': 
                 continue
             if file in fold_list:
                 continue
@@ -71,20 +76,21 @@ def sort_by_fold (fold):
 
             try:
                 
-                
-                file_new = normalize_file(file)
+            
                 path_file = os.path.join(fold, file)
+                file_new = normalize_file(file)
                 new_path = os.path.join(fold, file_new)
+                
                 os.rename(path_file, new_path)
                 file = file_new
                 
 
 
             except FileNotFoundError:
-                print('File not found: ', path_file)
+                print('File not found: ', new_path)
 
             
-            if os.path.isdir(path_file) is True:
+            if os.path.isdir(new_path) is True:
                 
                 if len(os.listdir(fold)) == 0:
                     print('Empty folder. Deleting...')
@@ -92,14 +98,14 @@ def sort_by_fold (fold):
                     continue
                     
             
-                sort_by_fold (path_file)
+                sort_by_fold (new_path)
 
             else:
                 if file.endswith(suffix_image):
                     if not os.path.exists(images):
                         os.makedirs(images)
                     image_l.append(file)
-                    shutil.move(path_file, images)
+                    shutil.move(new_path, images)
                     
 
 
@@ -107,37 +113,35 @@ def sort_by_fold (fold):
                     if not os.path.exists(video):
                         os.makedirs(video)
                     video_l.append(file)
-                    shutil.move(path_file, video)
+                    shutil.move(new_path, video)
 
 
                 elif file.endswith(suffix_doc):
                     if not os.path.exists(documents):
                         os.makedirs(documents)
                     doc_l.append(file)
-                    shutil.move(path_file, documents)
+                    shutil.move(new_path, documents)
 
                 elif file.endswith(suffix_music):
                     if not os.path.exists(audio):
                         os.makedirs(audio)
                     music_l.append(file)
-                    shutil.move(path_file, audio)
+                    shutil.move(new_path, audio)
 
                 elif file.endswith(sufix_archive):
                     if not os.path.exists(archives):
                         os.makedirs(archives + '/' + file.split('.')[0])
                     archive_l.append(file)
-                    shutil.unpack_archive(path_file, archives + '/' + file.split('.')[0])
-                    os.remove(path_file)
+                    shutil.unpack_archive(new_path, archives + '/' + file.split('.')[0])
+                    os.remove(new_path)
 
 
                 else:
                     if not os.path.exists(not_found):
                         os.makedirs(not_found)
                     not_found_l.append(file)
-                    shutil.move(path_file, not_found)
-    
+                    shutil.move(new_path, not_found)
 
-    
     
     return  group
 
@@ -156,8 +160,7 @@ def Known_extension(group):
             match = re.search(pattern, all_names)
             if match:
                 Known_extension_set.add(match.group())
-            else:
-                Known_extension_set.add("None")
+            
     return Known_extension_set
 
 
@@ -170,11 +173,12 @@ def Unknown_extension(group):
         match = re.search(pattern, all_not_names)
         if match:
             Unknown_extension_set.add(match.group())
-        else:
-            Unknown_extension_set.add("None")
+        
     return Unknown_extension_set
 
-group = sort_by_fold ('/Users/anastasia/Desktop/test2')
+
+path_file = sys.argv[1]
+group = sort_by_fold (path_file )
 Known_extension_set = Known_extension (group)
 Unknown_extension_set = Unknown_extension(group)
 
