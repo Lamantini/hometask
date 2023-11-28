@@ -195,21 +195,6 @@ def unknown_extension(group):
         
     return unknown_extension_set
 
-#def remove_empty_folder(fold):
-    if not os.listdir(fold):
-        try:
-            os.rmdir(fold)
-            print("after try rmdir fold", fold)
-        except OSError as e:
-            return
-    if os.path.exists(fold):    
-        for subfolder in os.listdir(fold):
-                subfolder_path = os.path.join(fold, subfolder)
-                print ("sudfolder path = ", subfolder_path)
-                
-                if os.path.isdir(subfolder_path):
-                    print("if subfolder_path is dir" )
-                    remove_empty_folder(subfolder_path)
 
 def remove_empty_folder(fold):
     if not os.path.isdir(fold):
