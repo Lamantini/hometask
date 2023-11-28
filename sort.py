@@ -26,7 +26,7 @@ suffix_music = ('.mp3', '.ogg', '.wav', '.amr')
 sufix_archive = ('.zip', '.gz', '.tar')
 
 
-def normalize_file (file):
+def normalize (file):
     
     for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
         TRANS[ord(c)] = l
@@ -45,15 +45,15 @@ def normalize_file (file):
 
 
 
-def sort_by_fold (fold):
+def sort_by_fold (fold, first_path):
 
-    images = fold + '/images'
-    video = fold + '/video'
-    documents = fold + '/documents'
-    audio = fold + '/audio'
-    archives = fold + '/archives'
-    not_found = fold + '/not_found'
-    fold_list = ['images', 'video', 'documents', 'audio', 'archives', 'not_found']
+    images = first_path + '/images'
+    video = first_path + '/video'
+    documents = first_path + '/documents'
+    audio = first_path + '/audio'
+    archives = first_path + '/archives'
+    not_found = first_path + '/not_found'
+    fold_list = ['images', 'video', 'documents', 'audio', 'archives', 'not_found', '.DS_Store']
 
     if os.path.isdir(fold):
         
@@ -68,8 +68,6 @@ def sort_by_fold (fold):
         
         
         for file in files:
-            if file == '.DS_Store': 
-                continue
             if file in fold_list:
                 continue
             
@@ -78,7 +76,7 @@ def sort_by_fold (fold):
                 
             
                 path_file = os.path.join(fold, file)
-                file_new = normalize_file(file)
+                file_new = normalize(file)
                 new_path = os.path.join(fold, file_new)
                 
                 os.rename(path_file, new_path)
@@ -98,42 +96,59 @@ def sort_by_fold (fold):
                     continue
                     
             
-                sort_by_fold (new_path)
+                sort_by_fold (new_path, first_path)
+
+                    
 
             else:
-                if file.endswith(suffix_image):
+                if file.lower().endswith(suffix_image):
                     if not os.path.exists(images):
                         os.makedirs(images)
                     image_l.append(file)
-                    shutil.move(new_path, images)
-                    
+                    try:
+                        shutil.move(new_path, images)
+                    except Exception as e:
+                       print ("This file already exists: ", file)
 
 
-                elif file.endswith(suffix_video):
+
+                elif file.lower().endswith(suffix_video):
                     if not os.path.exists(video):
                         os.makedirs(video)
                     video_l.append(file)
-                    shutil.move(new_path, video)
+                    try:
+                        shutil.move(new_path, video)
+                    except Exception as e:
+                       print ("This file already exists: ", file)
 
 
-                elif file.endswith(suffix_doc):
+                elif file.lower().endswith(suffix_doc):
                     if not os.path.exists(documents):
                         os.makedirs(documents)
                     doc_l.append(file)
-                    shutil.move(new_path, documents)
+                    try:
+                        shutil.move(new_path, documents)
+                    except Exception as e:
+                       print ("This file already exists: ", file)
 
-                elif file.endswith(suffix_music):
+                elif file.lower().endswith(suffix_music):
                     if not os.path.exists(audio):
                         os.makedirs(audio)
                     music_l.append(file)
-                    shutil.move(new_path, audio)
+                    try:
+                        shutil.move(new_path, audio)
+                    except Exception as e:
+                       print ("This file already exists: ", file)
 
-                elif file.endswith(sufix_archive):
+                elif file.lower().endswith(sufix_archive):
                     if not os.path.exists(archives):
                         os.makedirs(archives + '/' + file.split('.')[0])
                     archive_l.append(file)
-                    shutil.unpack_archive(new_path, archives + '/' + file.split('.')[0])
-                    os.remove(new_path)
+                    try:
+                        shutil.unpack_archive(new_path, archives + '/' + file.split('.')[0])
+                        os.remove(new_path)
+                    except Exception as e:
+                       print ("Something went wrong: ", e)
 
 
                 else:
@@ -142,15 +157,15 @@ def sort_by_fold (fold):
                     not_found_l.append(file)
                     shutil.move(new_path, not_found)
 
-    
+    remove_empty_folder(fold)
     return  group
 
 
 
-def Known_extension(group):
+def known_extension(group):
     pattern = r'\.([a-zA-Z0-9]+)$'
     all_names = ''
-    Known_extension_set = set()
+    known_extension_set = set()
     for list in group:
         if list is not_found_l:
             continue
@@ -159,31 +174,47 @@ def Known_extension(group):
             all_names += name
             match = re.search(pattern, all_names)
             if match:
-                Known_extension_set.add(match.group())
+                known_extension_set.add(match.group())
             
-    return Known_extension_set
+    return known_extension_set
 
 
-def Unknown_extension(group):
+def unknown_extension(group):
     pattern = r'\.([a-zA-Z0-9]+)$'
     all_not_names = ''
-    Unknown_extension_set = set()   
+    unknown_extension_set = set()   
     for name_not in not_found_l:
         all_not_names += name_not
         match = re.search(pattern, all_not_names)
         if match:
-            Unknown_extension_set.add(match.group())
+            unknown_extension_set.add(match.group())
         
-    return Unknown_extension_set
+    return unknown_extension_set
+
+def remove_empty_folder(fold):
+    if not os.listdir(fold):
+        try:
+            os.rmdir(fold)
+        except OSError as e:
+            return
+    for subfolder in os.listdir(fold):
+            subfolder_path = os.path.join(fold, subfolder)
+            if os.path.isdir(subfolder_path):
+                remove_empty_folder(subfolder_path)
 
 
-path_file = sys.argv[1]
-group = sort_by_fold (path_file )
-Known_extension_set = Known_extension (group)
-Unknown_extension_set = Unknown_extension(group)
+def main():
+    path_file = sys.argv[1]
+    
+    group = sort_by_fold (path_file, path_file)
 
-print ('images = ', image_l, "; video = ", video_l, \
-       "; documents = ", doc_l, '; music = ', music_l,\
-        '; archives = ', archive_l, '; unknown = ', not_found_l,\
-            '\n', 'Known_extension  =', Known_extension_set, \
-            '\n', 'Unknown_extension =', Unknown_extension_set)
+    known_extension_set = known_extension (group)
+    unknown_extension_set = unknown_extension(group)
+
+    print ('images = ', image_l, "; video = ", video_l, \
+        "; documents = ", doc_l, '; music = ', music_l,\
+            '; archives = ', archive_l, '; unknown = ', not_found_l,\
+                '\n', 'Known_extension  =', known_extension_set, \
+                '\n', 'Unknown_extension =', unknown_extension_set)
+if __name__ == '__main__':
+    main()
