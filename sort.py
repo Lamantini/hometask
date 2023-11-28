@@ -58,7 +58,7 @@ def sort_by_fold (fold, first_path):
     if os.path.isdir(fold):
         
         if len(os.listdir(fold)) == 0:
-            print('Empty folder. Deleting...')
+            print('Empty folder. Deleting...', fold)
             shutil.rmtree(fold)
             return group
             
@@ -149,6 +149,10 @@ def sort_by_fold (fold, first_path):
                         os.remove(new_path)
                     except Exception as e:
                        print ("Something went wrong: ", e)
+                       if not os.path.exists(not_found):
+                            os.makedirs(not_found)
+                       not_found_l.append(file)
+                       shutil.move(new_path, not_found)
 
 
                 else:
@@ -157,7 +161,7 @@ def sort_by_fold (fold, first_path):
                     not_found_l.append(file)
                     shutil.move(new_path, not_found)
 
-    remove_empty_folder(fold)
+    
     return  group
 
 
@@ -191,17 +195,35 @@ def unknown_extension(group):
         
     return unknown_extension_set
 
-def remove_empty_folder(fold):
+#def remove_empty_folder(fold):
     if not os.listdir(fold):
         try:
             os.rmdir(fold)
+            print("after try rmdir fold", fold)
         except OSError as e:
             return
-    for subfolder in os.listdir(fold):
-            subfolder_path = os.path.join(fold, subfolder)
-            if os.path.isdir(subfolder_path):
-                remove_empty_folder(subfolder_path)
+    if os.path.exists(fold):    
+        for subfolder in os.listdir(fold):
+                subfolder_path = os.path.join(fold, subfolder)
+                print ("sudfolder path = ", subfolder_path)
+                
+                if os.path.isdir(subfolder_path):
+                    print("if subfolder_path is dir" )
+                    remove_empty_folder(subfolder_path)
 
+def remove_empty_folder(fold):
+    if not os.path.isdir(fold):
+        return
+
+    for item in os.listdir(fold):
+        item_path = os.path.join(fold, item)
+        if os.path.isdir(item_path):
+            remove_empty_folder(item_path) 
+
+    
+    if not os.listdir(fold):
+        os.rmdir(fold)
+        print(f"Deleted empty folder: {fold}")
 
 def main():
     path_file = sys.argv[1]
@@ -210,7 +232,7 @@ def main():
 
     known_extension_set = known_extension (group)
     unknown_extension_set = unknown_extension(group)
-
+    remove_empty_folder(path_file)
     print ('images = ', image_l, "; video = ", video_l, \
         "; documents = ", doc_l, '; music = ', music_l,\
             '; archives = ', archive_l, '; unknown = ', not_found_l,\
