@@ -149,10 +149,7 @@ def sort_by_fold (fold, first_path):
                         os.remove(new_path)
                     except Exception as e:
                        print ("Something went wrong: ", e)
-                       if not os.path.exists(not_found):
-                            os.makedirs(not_found)
-                       not_found_l.append(file)
-                       shutil.move(new_path, not_found)
+                       shutil.move(new_path, archives)
 
 
                 else:
